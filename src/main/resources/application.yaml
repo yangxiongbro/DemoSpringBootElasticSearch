@@ -1,0 +1,9 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /demo_spring_boot_elastic_search
+spring:
+  application:
+    name: DemoSpringBootElasticSearch
+  profiles:
+    active: dev
