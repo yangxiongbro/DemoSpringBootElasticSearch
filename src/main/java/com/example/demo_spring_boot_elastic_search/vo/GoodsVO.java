@@ -1,4 +1,4 @@
-package cn.arguments.demo_spring_boot_elastic_search.vo;
+package com.example.demo_spring_boot_elastic_search.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

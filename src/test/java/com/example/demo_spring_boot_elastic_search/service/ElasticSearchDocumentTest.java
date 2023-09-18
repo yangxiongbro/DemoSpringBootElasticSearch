@@ -1,7 +1,7 @@
-package cn.arguments.demo_spring_boot_elastic_search.service;
+package com.example.demo_spring_boot_elastic_search.service;
 
-import cn.arguments.demo_spring_boot_elastic_search.constants.ElasticSearchConstants;
-import cn.arguments.demo_spring_boot_elastic_search.vo.GoodsVO;
+import com.example.demo_spring_boot_elastic_search.constants.ElasticSearchConstants;
+import com.example.demo_spring_boot_elastic_search.vo.GoodsVO;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;

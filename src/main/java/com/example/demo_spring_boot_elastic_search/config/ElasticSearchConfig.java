@@ -1,4 +1,4 @@
-package cn.arguments.demo_spring_boot_elastic_search.config;
+package com.example.demo_spring_boot_elastic_search.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;

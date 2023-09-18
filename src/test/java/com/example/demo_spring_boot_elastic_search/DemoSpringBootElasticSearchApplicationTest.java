@@ -1,4 +1,4 @@
-//package cn.arguments.demo_spring_boot_elastic_search;
+//package com.example.demo_spring_boot_elastic_search;
 //
 ///**
 // * <b><code>DemoSpringBootElasticSearchApplicationTest</code></b>

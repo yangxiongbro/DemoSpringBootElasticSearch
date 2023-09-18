@@ -1,4 +1,4 @@
-package cn.arguments.demo_spring_boot_elastic_search.constants;
+package com.example.demo_spring_boot_elastic_search.constants;
 
 /**
  * <b><code>ElasticSearchConstants</code></b>
