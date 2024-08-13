@@ -1,4 +1,4 @@
-package com.example.demo_spring_boot_elastic_search.vo;
+package com.example.demo_spring_boot_elastic_search.po;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -17,11 +18,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * <b><code>GoodsVO</code></b>
+ * <b><code>GoodsPO</code></b>
  * <p/>
- * 商品 VO
+ * <p>
  * <p/>
- * <b>Creation Time:</b> 2023/9/15 1:21
+ * <b>Creation Time:</b> 2024/8/12 23:02
  *
  * @author yang xiong
  * @since DemoSpringBootElasticSearch 1.0
@@ -30,8 +31,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(indexName = "es_demo_goods")
-public class GoodsVO {
-
+public class GoodsPO {
     @Id
     private String id;
 
@@ -50,15 +50,15 @@ public class GoodsVO {
     /**
      * 商品价格
      */
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Scaled_Float)
     private BigDecimal price;
 
     /**
      * 商品日期
      */
+    @Field(name = "create_date", type = FieldType.Date, format = {DateFormat.date_hour_minute_second})
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @Field(name = "create_date", type = FieldType.Text)
     private LocalDateTime createDate;
 }

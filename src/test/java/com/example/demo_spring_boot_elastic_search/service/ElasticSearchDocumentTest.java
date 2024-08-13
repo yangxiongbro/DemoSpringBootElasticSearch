@@ -1,19 +1,20 @@
 package com.example.demo_spring_boot_elastic_search.service;
 
-import com.example.demo_spring_boot_elastic_search.constants.ElasticSearchConstants;
-import com.example.demo_spring_boot_elastic_search.vo.GoodsVO;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.*;
-import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
-import co.elastic.clients.transport.endpoints.BooleanResponse;
+import com.example.demo_spring_boot_elastic_search.po.GoodsPO;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.document.Document;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.*;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,10 +32,9 @@ import java.util.List;
  * @since DemoSpringBootElasticSearch 1.0
  */
 @SpringBootTest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ElasticSearchDocumentTest {
     @Autowired
-    private ElasticsearchClient client;
+    private ElasticsearchRestTemplate template;
 
     private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -43,71 +43,73 @@ public class ElasticSearchDocumentTest {
     private BigDecimal price = new BigDecimal(3999.99);
     private LocalDateTime createDate = LocalDateTime.parse("2022-12-11 00:00:00", dtf);
 
-    private GoodsVO goodsVO = new GoodsVO(String.format(name, 13), String.format(info, 13), price, createDate);
+    private GoodsPO goods = new GoodsPO(null, String.format(name, 13), String.format(info, 13), price, createDate);
 
     @Test
-    @Order(1)
-    public void createDocument() throws IOException {
-        IndexResponse response = client.index(request -> request
-                .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
-                .id("1")
-                .document(goodsVO));
-        System.out.println(response);
+    public void createDocument() {
+        goods.setId("1");
+        System.out.println(goods);
+        GoodsPO result = template.save(goods);
+        System.out.println(result);
     }
 
     @Test
-    @Order(2)
-    public void batchCreateDocument() throws IOException {
-        List<BulkOperation> bulkOperationList = new ArrayList<>(5);
+    public void batchCreateDocument() {
+        List<GoodsPO> goodList = new ArrayList<>(5);
         for(int i = 12;i > 7; i--){
             int finalI = i;
-            bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(
-                    new GoodsVO(String.format(name, finalI), String.format(info, finalI), price, createDate)
-            ))));
+            goodList.add(new GoodsPO(String.valueOf(finalI), String.format(name, finalI), String.format(info, finalI), price, createDate));
         }
-        BulkResponse response = client.bulk(request -> request
-                .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
-                .operations(bulkOperationList));
-        System.out.println(response);
+        Iterable<GoodsPO> resultList = template.save(goodList);
+        for(GoodsPO goods:resultList){
+            System.out.println(goods);
+        }
     }
 
     @Test
-    @Order(3)
-    public void existsDocument() throws IOException {
-        BooleanResponse response = client.exists(request -> request
-                .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
-                .id("1"));
-        System.out.println(response);
+    public void existsDocument() {
+        boolean exist = template.exists("1", GoodsPO.class);
+        System.out.println(exist);
     }
 
     @Test
-    @Order(4)
-    public void queryDocument() throws IOException {
-        GetResponse<GoodsVO> response = client.get(request -> request
-                .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
-                .id("1"),
-                GoodsVO.class);
-        System.out.println(response);
+    public void queryDocument() {
+        // 根据 id 查询
+        GoodsPO goodsPO = template.get("1", GoodsPO.class);
+        System.out.println(goodsPO);
     }
 
     @Test
-    @Order(5)
-    public void updateDocument() throws IOException {
-        goodsVO.setCreateDate(LocalDateTime.parse("2022-12-14 00:00:00", dtf));
-        UpdateResponse<GoodsVO> response = client.update(request -> request
-                .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
-                .id("1")
-                .doc(goodsVO),
-                GoodsVO.class);
-        System.out.println(response);
+    public void searchDocument() {
+        // https://blog.csdn.net/xiao_gu_yu/article/details/137009722
+        Criteria criteria = new Criteria();
+        criteria.and(new Criteria("name").is("小米"));
+        criteria.and(new Criteria("price").is(3999.99));
+
+        Query query = new CriteriaQuery(criteria)
+                .addSort(Sort.by(new Order(Sort.Direction.ASC, "price")))
+                .addSort(Sort.by(new Order(Sort.Direction.DESC, "create_date")))
+                .setPageable(PageRequest.of(0, 20));
+        query.addSourceFilter(new FetchSourceFilterBuilder().withExcludes("info").build()); // 不需要查询的字段
+        SearchHits<GoodsPO> searchHits = template.search(query, GoodsPO.class);
+        System.out.println(searchHits.getTotalHits()); //数量
+        for(SearchHit<GoodsPO> searchHit:searchHits){
+            GoodsPO goods = searchHit.getContent();
+            System.out.println(goods);
+        }
     }
 
     @Test
-    @Order(6)
-    public void deleteDocument() throws IOException {
-        DeleteResponse response = client.delete(request -> request
-                        .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
-                        .id("1"));
-        System.out.println(response);
+    public void updateDocument() {
+        Document document = Document.create();
+        document.put("create_date", LocalDateTime.parse("2022-12-14 00:00:00", dtf));
+        template.update(UpdateQuery.builder("1").withDocument(document).build(), IndexCoordinates.of("es_demo_goods"));
+    }
+
+    @Test
+    public void deleteDocument() {
+        goods.setId("1");
+        String delete = template.delete(goods);
+        System.out.println(delete);
     }
 }
