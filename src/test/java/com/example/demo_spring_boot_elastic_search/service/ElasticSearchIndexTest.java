@@ -1,11 +1,21 @@
 package com.example.demo_spring_boot_elastic_search.service;
 
-import com.example.demo_spring_boot_elastic_search.po.GoodsPO;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
+import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.IndexOperations;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * <b><code>ElasticSearchTest</code></b>
@@ -18,29 +28,41 @@ import org.springframework.data.elasticsearch.core.IndexOperations;
  * @since DemoSpringBootElasticSearch 1.0
  */
 @SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ElasticSearchIndexTest {
     @Autowired
-    private ElasticsearchRestTemplate template;
+    private ElasticsearchClient client;
+
+    public static final String INDEX_NAME = "sms-logs-index";
 
     @Test
-    public void existsIndex() {
-        IndexOperations idxOpt = template.indexOps(GoodsPO.class);
-        boolean idxExist = idxOpt.exists();             // 索引是否存在
-        System.out.println("exists: " + idxExist);
+    @Order(1)
+    public void createIndex() throws IOException {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("json/CreateIndex.json"), StandardCharsets.UTF_8))) {
+            CreateIndexResponse response = client.indices().create(r -> r.index(INDEX_NAME).withJson(br));
+            System.out.println(response);
+        }
     }
 
     @Test
-    public void createIndex() {
-        IndexOperations idxOpt = template.indexOps(GoodsPO.class);
-        boolean createSuccess = idxOpt.create();        // 创建索引
-        System.out.println("create: " + createSuccess);
+    @Order(2)
+    public void existsIndex() throws IOException {
+        BooleanResponse response = client.indices().exists(r -> r.index(INDEX_NAME));
+        System.out.println(response);
     }
 
     @Test
-    public void deleteIndex() {
-        IndexOperations idxOpt = template.indexOps(GoodsPO.class);
-        boolean deleted = idxOpt.delete();              // 删除索引
-        System.out.println("delete: " + deleted);
+    @Order(3)
+    public void queryIndex() throws IOException {
+        GetIndexResponse response = client.indices().get(r -> r.index(INDEX_NAME));
+        System.out.println(response);
+    }
+
+    @Test
+    @Order(4)
+    public void deleteIndex() throws IOException {
+        DeleteIndexResponse response = client.indices().delete(r -> r.index(INDEX_NAME));
+        System.out.println(response);
     }
 
 }

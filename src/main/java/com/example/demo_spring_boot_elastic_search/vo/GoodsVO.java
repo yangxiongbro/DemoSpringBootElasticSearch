@@ -8,10 +8,6 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,28 +25,23 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(indexName = "es_demo_goods")
 public class GoodsVO {
 
-    @Id
     private String id;
 
     /**
      * 商品名
      */
-    @Field(type = FieldType.Text)
     private String name;
 
     /**
      * 商品信息
      */
-    @Field(type = FieldType.Text)
     private String info;
 
     /**
      * 商品价格
      */
-    @Field(type = FieldType.Text)
     private BigDecimal price;
 
     /**
@@ -59,6 +50,5 @@ public class GoodsVO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @Field(name = "create_date", type = FieldType.Text)
     private LocalDateTime createDate;
 }

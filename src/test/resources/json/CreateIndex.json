@@ -1,21 +1,44 @@
 {
-  "properties": {
-    "name": {
-      "type": "text",
-      "analyzer": "standard"
-    },
-    "info": {
-      "type": "text",
-      "analyzer": "standard"
-    },
-    "price": {
-      "type": "scaled_float",
-      "scaling_factor": 100,
-      "index": "false"
-    },
-    "create_date": {
-      "type": "date",
-      "format": "yyyy-MM-dd HH:mm:ss"
+  "mappings": {
+    "properties": {
+      "create_date":  {
+        "type": "date"
+      },
+      "send_date": {
+        "type":  "date"
+      },
+      "long_code":  {
+        "type":  "keyword"
+      },
+      "mobile": {
+        "type":  "keyword"
+      },
+      "corp_name":  {
+        "type":  "keyword"
+      },
+      "sms_content": {
+        "type":  "text",
+        "analyzer": "ik_smart"
+      },
+      "state":  {
+        "type":  "integer"
+      },
+      "operator_id": {
+        "type":  "integer"
+      },
+      "province":  {
+        "type":  "keyword"
+      },
+      "ip_addr": {
+        "type":  "ip"
+      },
+      "reply_total":  {
+        "type":  "integer"
+      },
+      "fee": {
+        "type":  "long"
+      }
     }
   }
 }
+

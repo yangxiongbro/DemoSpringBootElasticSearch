@@ -1,20 +1,25 @@
 package com.example.demo_spring_boot_elastic_search.service;
 
-import com.example.demo_spring_boot_elastic_search.po.GoodsPO;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
+import com.example.demo_spring_boot_elastic_search.po.SmsLogsPO;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.document.Document;
-import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
-import org.springframework.data.elasticsearch.core.query.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,84 +37,130 @@ import java.util.List;
  * @since DemoSpringBootElasticSearch 1.0
  */
 @SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ElasticSearchDocumentTest {
     @Autowired
-    private ElasticsearchRestTemplate template;
+    private ElasticsearchClient client;
 
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     private String name = "小米%d Pro";
     private String info = "小米%d Pro是小米于2022年12月11日发布的手机产品；于2022年12月14日正式开售。";
     private BigDecimal price = new BigDecimal(3999.99);
-    private LocalDateTime createDate = LocalDateTime.parse("2022-12-11 00:00:00", dtf);
+    private LocalDateTime createDate = LocalDateTime.parse("2022-12-11 00:00:00.000", dtf);
 
-    private GoodsPO goods = new GoodsPO(null, String.format(name, 13), String.format(info, 13), price, createDate);
+    private SmsLogsPO SmsLogs01 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.030", dtf), LocalDateTime.parse("2020-04-17 23:36:33.030", dtf), "10690000988", "13700000001", "途虎养车", "【途虎养车】亲爱的刘红先生/女士，您在途虎购买的货品(单号TH1234526)已到指定安装店多日，现需与您确认订单的安装情况，请点击链接按实际情况选择（此链接有效期为72小时）。您也可以登录途虎APP进入“我的-待安装订单”进行预约安装。若您在服务过程中有任何疑问，请致电400-111-8886向途虎咨询。", 0, 1, "上海", "10.126.2.9", 10, 3);
+    private SmsLogsPO SmsLogs02 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "18600000001", "盒马鲜生", "【盒马】您尾号7775678的订单已开始配送，请在您指定的时间收货不要走开哦~配送员：王五，电话：13800000001", 0, 2, "上海", "10.126.2.9", 15, 5);
+    private SmsLogsPO SmsLogs03 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "15300000000", "滴滴打车", "【滴滴单车平台】专属限时福利!青桔/小蓝月卡立享5折，特惠畅骑30天。戳 https://xxxxxx退订TD", 1, 3, "上海", "10.126.2.8", 50, 7);
+    private SmsLogsPO SmsLogs04 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "18000000001", "滴滴打车", "【滴滴单车平台】专属限时福利!青桔/小蓝月卡立享5折，特惠畅骑30天。戳 https://xxxxxx退订TD", 1, 3, "武汉", "10.126.2.8", 50, 7);
+    private SmsLogsPO SmsLogs05 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13900000000", "招商银行", "【招商银行】尊贵的李四先生，恭喜您获得华为P30 Pro抽奖资格，还可领100元打车红包，仅限1天", 0, 1, "上海", "10.126.2.8", 50, 8);
+    private SmsLogsPO SmsLogs06 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13600000000", "中国移动", "【北京移动】尊敬的客户137****0000，5月话费账单已送达您的139邮箱，点击查看账单详情 http://y.10086.cn/；回Q关闭通知，关注“中国移动139邮箱”微信随时查账单【中国移动139邮箱】", 0, 1, "武汉", "10.126.2.8", 60, 4);
+    private SmsLogsPO SmsLogs07 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13990000001", "招商银行", "【招商银行】尊贵的李四先生，恭喜您获得华为P30 Pro抽奖资格，还可领100元打车红包，仅限1天", 0, 1, "武汉", "10.126.2.8", 50, 8);
+    private SmsLogsPO SmsLogs08 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13990001234", "中国银行", "【北京移动】尊敬的客户137****1234，8月话费账单已送达您的126邮箱，点击查看账单详情 http://y.10086.cn/；回Q关闭通知，关注“中国移动126邮箱”微信随时查账单【中国移动126邮箱】", 0, 1, "山西", "10.126.2.8", 60, 4);
+    private SmsLogsPO SmsLogs09 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13800000000", "途虎养车", "【途虎养车】亲爱的张三先生/女士，您在途虎购买的货品(单号TH1234526)已到指定安装店多日，现需与您确认订单的安装情况，请点击链接按实际情况选择（此链接有效期为72小时）。您也可以登录途虎APP进入“我的-待安装订单”进行预约安装。若您在服务过程中有任何疑问，请致电400-111-8886向途虎咨询。", 0, 1, "北京", "10.126.2.9", 10, 3);
+    private SmsLogsPO SmsLogs10 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13100000000", "盒马鲜生", "【盒马】您尾号12345678的订单已开始配送，请在您指定的时间收货不要走开哦~配送员：刘三，电话：13800000000", 0, 2, "北京", "10.126.2.9", 15, 5);
+    private SmsLogsPO SmsLogs11 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13700000000", "中国平安保险有限公司", "【中国平安】奋斗时代，更需要健康的身体。中国平安为您提供多重健康保障，在奋斗之路上为您保驾护航。退订请回复TD", 0, 1, "武汉", "10.126.2.8", 18, 5);
+    private SmsLogsPO SmsLogs12 = new SmsLogsPO(null, LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), LocalDateTime.parse("2020-04-17 23:36:33.073", dtf), "10690000988", "13990000002", "招商银行", "【招商银行】尊贵的王五先生，恭喜您获得iphone 56抽奖资格，还可领5元打车红包，仅限100天", 0, 1, "武汉", "10.126.2.8", 18, 5);
 
     @Test
-    public void createDocument() {
-        goods.setId("1");
-        System.out.println(goods);
-        GoodsPO result = template.save(goods);
-        System.out.println(result);
+    @Order(1)
+    public void createDocument() throws IOException {
+        IndexResponse response = client.index(request -> request
+                .index(ElasticSearchIndexTest.INDEX_NAME)
+                .id("1")
+                .document(SmsLogs01));
+        System.out.println(response);
     }
 
     @Test
-    public void batchCreateDocument() {
-        List<GoodsPO> goodList = new ArrayList<>(5);
-        for(int i = 12;i > 7; i--){
-            int finalI = i;
-            goodList.add(new GoodsPO(String.valueOf(finalI), String.format(name, finalI), String.format(info, finalI), price, createDate));
-        }
-        Iterable<GoodsPO> resultList = template.save(goodList);
-        for(GoodsPO goods:resultList){
-            System.out.println(goods);
-        }
+    @Order(2)
+    public void batchCreateDocument() throws IOException {
+        List<BulkOperation> bulkOperationList = new ArrayList<>(12);
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs01))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs02))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs03))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs04))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs05))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs06))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs07))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs08))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs09))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs10))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs11))));
+        bulkOperationList.add(BulkOperation.of(o -> o.index(index -> index.document(SmsLogs12))));
+        BulkResponse response = client.bulk(request -> request
+                .index(ElasticSearchIndexTest.INDEX_NAME)
+                .operations(bulkOperationList));
+        System.out.println(response);
     }
 
     @Test
-    public void existsDocument() {
-        boolean exist = template.exists("1", GoodsPO.class);
-        System.out.println(exist);
+    @Order(3)
+    public void existsDocument() throws IOException {
+        BooleanResponse response = client.exists(request -> request
+                .index(ElasticSearchIndexTest.INDEX_NAME)
+                .id("1"));
+        System.out.println(response);
     }
 
     @Test
-    public void queryDocument() {
+    @Order(4)
+    public void queryDocument() throws IOException {
         // 根据 id 查询
-        GoodsPO goodsPO = template.get("1", GoodsPO.class);
-        System.out.println(goodsPO);
+        GetResponse<SmsLogsPO> response = client.get(request -> request
+                        .index(ElasticSearchIndexTest.INDEX_NAME)
+                        .id("1"),
+                SmsLogsPO.class);
+        System.out.println(response);
     }
 
     @Test
-    public void searchDocument() {
-        // https://blog.csdn.net/xiao_gu_yu/article/details/137009722
-        Criteria criteria = new Criteria();
-        criteria.and(new Criteria("name").is("小米"));
-        criteria.and(new Criteria("price").is(3999.99));
-
-        Query query = new CriteriaQuery(criteria)
-                .addSort(Sort.by(new Order(Sort.Direction.ASC, "price")))
-                .addSort(Sort.by(new Order(Sort.Direction.DESC, "create_date")))
-                .setPageable(PageRequest.of(0, 20));
-        query.addSourceFilter(new FetchSourceFilterBuilder().withExcludes("info").build()); // 不需要查询的字段
-        SearchHits<GoodsPO> searchHits = template.search(query, GoodsPO.class);
-        System.out.println(searchHits.getTotalHits()); //数量
-        for(SearchHit<GoodsPO> searchHit:searchHits){
-            GoodsPO goods = searchHit.getContent();
-            System.out.println(goods);
-        }
+    @Order(4)
+    public void searchDocument() throws IOException {
+        Query nameQuery = MatchQuery.of(m -> m.field("name").query("小米15"))._toQuery();
+        Query priceQuery = MatchQuery.of(m -> m.field("price").query(3999.99))._toQuery();
+        List<FieldValue> provinceList = new ArrayList<>(2);
+        provinceList.add(FieldValue.of("北京"));
+        provinceList.add(FieldValue.of("武汉"));
+        // 搜索
+        SearchResponse<SmsLogsPO> response = client.search(request -> request
+                        .index(ElasticSearchIndexTest.INDEX_NAME)
+                        .query(q ->
+//                                q.matchAll(m -> m) // 搜索全部
+//                                q.term(t -> t.field("province").value("北京"))    // term 查询
+                                  q.terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
+//                                q.match(m -> m.field("name").query("小米15")) // 查询 name = 小米 的数据
+//                                        q.bool(b -> b.must(nameQuery, priceQuery)) // 嵌套查询
+                        )
+//                        .sort(s -> s.field(f -> f.field("price").order(SortOrder.Asc))) //排序字段1
+//                        .sort(s -> s.field(f -> f.field("create_date").order(SortOrder.Desc))) //排序字段2
+                        .from(0).size(20), // 浅分页，类似 mysql 的 limit 参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html
+                SmsLogsPO.class);
+        System.out.println(response.hits().total().value()); //数量
+        response.hits().hits().forEach(h -> {
+            SmsLogsPO log = h.source(); // 实体类
+            System.out.println(log);
+        });
     }
 
     @Test
-    public void updateDocument() {
-        Document document = Document.create();
-        document.put("create_date", LocalDateTime.parse("2022-12-14 00:00:00", dtf));
-        template.update(UpdateQuery.builder("1").withDocument(document).build(), IndexCoordinates.of("es_demo_goods"));
+    @Order(5)
+    public void updateDocument() throws IOException {
+//        goodsVO.setCreateDate(LocalDateTime.parse("2022-12-14 00:00:00", dtf));
+//        UpdateResponse<GoodsVO> response = client.update(request -> request
+//                        .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
+//                        .id("1")
+//                        .doc(goodsVO),
+//                GoodsVO.class);
+//        System.out.println(response);
     }
 
     @Test
-    public void deleteDocument() {
-        goods.setId("1");
-        String delete = template.delete(goods);
-        System.out.println(delete);
+    @Order(6)
+    public void deleteDocument() throws IOException {
+//        DeleteResponse response = client.delete(request -> request
+//                .index(ElasticSearchConstants.DEMO_INDEX_ES_DEMO_GOODS)
+//                .id("1"));
+//        System.out.println(response);
     }
 }
