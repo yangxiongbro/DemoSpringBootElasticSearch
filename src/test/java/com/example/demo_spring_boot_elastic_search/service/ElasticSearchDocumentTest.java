@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -109,7 +110,7 @@ public class ElasticSearchDocumentTest {
         // 根据 id 查询
         GetResponse<SmsLogsPO> response = client.get(request -> request
                         .index(ElasticSearchIndexTest.INDEX_NAME)
-                        .id("1"),
+                        .id("1u9_VpEBCrSApDIskHH3"),
                 SmsLogsPO.class);
         System.out.println(response);
     }
@@ -117,24 +118,28 @@ public class ElasticSearchDocumentTest {
     @Test
     @Order(4)
     public void searchDocument() throws IOException {
-        Query nameQuery = MatchQuery.of(m -> m.field("name").query("小米15"))._toQuery();
-        Query priceQuery = MatchQuery.of(m -> m.field("price").query(3999.99))._toQuery();
-        List<FieldValue> provinceList = new ArrayList<>(2);
-        provinceList.add(FieldValue.of("北京"));
-        provinceList.add(FieldValue.of("武汉"));
+//        Query nameQuery = MatchQuery.of(m -> m.field("name").query("小米15"))._toQuery();
+//        Query priceQuery = MatchQuery.of(m -> m.field("price").query(3999.99))._toQuery();
+//        List<FieldValue> provinceList = new ArrayList<>(2);
+//        provinceList.add(FieldValue.of("北京"));
+//        provinceList.add(FieldValue.of("武汉"));
         // 搜索
         SearchResponse<SmsLogsPO> response = client.search(request -> request
                         .index(ElasticSearchIndexTest.INDEX_NAME)
                         .query(q ->
-//                                q.matchAll(m -> m) // 搜索全部
-//                                q.term(t -> t.field("province").value("北京"))    // term 查询
-                                  q.terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
-//                                q.match(m -> m.field("name").query("小米15")) // 查询 name = 小米 的数据
+//                                        q.term(t -> t.field("province").value("北京"))    // term 查询
+//                                        q.terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
+//                                        q.matchAll(m -> m) // match_all 查询
+//                                        q.match(m -> m.field("smsContent").query("尊敬尊贵")) // match 查询
+//                                        q.match(m -> m.field("smsContent").query("尊贵 先生").operator(Operator.And)) // 布尔 match 查询
+//                                        q.multiMatch(m -> m.query("北京").fields("province","smsContent")) // multi_match 查询
+                                        q.ids(i ->i.values("1u9_VpEBCrSApDIskHH3", "2O9_VpEBCrSApDIskHH3"))
 //                                        q.bool(b -> b.must(nameQuery, priceQuery)) // 嵌套查询
                         )
 //                        .sort(s -> s.field(f -> f.field("price").order(SortOrder.Asc))) //排序字段1
 //                        .sort(s -> s.field(f -> f.field("create_date").order(SortOrder.Desc))) //排序字段2
-                        .from(0).size(20), // 浅分页，类似 mysql 的 limit 参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html
+                        .from(0)   // 浅分页，类似 mysql 的 limit 参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html
+                        .size(20), // 默认查询 10 条,如果需要查询更多则需要指定 size
                 SmsLogsPO.class);
         System.out.println(response.hits().total().value()); //数量
         response.hits().hits().forEach(h -> {

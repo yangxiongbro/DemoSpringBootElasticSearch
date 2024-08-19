@@ -1,6 +1,7 @@
 package com.example.demo_spring_boot_elastic_search.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
@@ -33,6 +34,8 @@ public class ElasticSearchConfig {
                 .builder(new HttpHost("192.168.31.90", 10519, "http"))
 //                .setHttpClientConfigCallback(hc -> hc.setDefaultCredentialsProvider(credsProv))
                 .build();
+        JsonpMapper jsonpMapper = new JacksonJsonpMapper();
+        jsonpMapper.ignoreUnknownFields();
         ElasticsearchTransport transport = new RestClientTransport(client, new JacksonJsonpMapper());
         return new ElasticsearchClient(transport);
     }
