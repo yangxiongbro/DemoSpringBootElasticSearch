@@ -3,14 +3,13 @@ package com.example.demo_spring_boot_elastic_search.service;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.Time;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.json.JsonData;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.example.demo_spring_boot_elastic_search.po.SmsLogsPO;
 import org.junit.jupiter.api.MethodOrderer;
@@ -127,13 +126,18 @@ public class ElasticSearchDocumentTest {
         SearchResponse<SmsLogsPO> response = client.search(request -> request
                         .index(ElasticSearchIndexTest.INDEX_NAME)
                         .query(q ->
-//                                        q.term(t -> t.field("province").value("北京"))    // term 查询
+                                        q.term(t -> t.field("province").value("北京"))    // term 查询
 //                                        q.terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
 //                                        q.matchAll(m -> m) // match_all 查询
 //                                        q.match(m -> m.field("smsContent").query("尊敬尊贵")) // match 查询
 //                                        q.match(m -> m.field("smsContent").query("尊贵 先生").operator(Operator.And)) // 布尔 match 查询
 //                                        q.multiMatch(m -> m.query("北京").fields("province","smsContent")) // multi_match 查询
-                                        q.ids(i ->i.values("1u9_VpEBCrSApDIskHH3", "2O9_VpEBCrSApDIskHH3"))
+//                                        q.ids(i ->i.values("1u9_VpEBCrSApDIskHH3", "2O9_VpEBCrSApDIskHH3"))
+//                                        q.prefix(p -> p.field("corpName").value("途虎养车")) // prefix 查询
+//                                        q.fuzzy(f -> f.field("corpName").value("途虎养车").prefixLength(2)) // fuzzy 查询
+//                                        q.wildcard(f -> f.field("corpName").value("途虎*")) // wildcard 查询
+//                                        q.range(r -> r.field("fee").gte(JsonData.of(5)).lte(JsonData.of(10))) // range 查询
+//                                        q.regexp((r -> r.field("mobile").value("180[0-9]{8}"))) // regexp 查询
 //                                        q.bool(b -> b.must(nameQuery, priceQuery)) // 嵌套查询
                         )
 //                        .sort(s -> s.field(f -> f.field("price").order(SortOrder.Asc))) //排序字段1
@@ -146,6 +150,49 @@ public class ElasticSearchDocumentTest {
             SmsLogsPO log = h.source(); // 实体类
             System.out.println(log);
         });
+    }
+
+    @Test
+    @Order(4)
+    public void scrollDocument() throws IOException {
+        long num = 0L;
+        // 执行 scro11 查询
+        SearchResponse<SmsLogsPO> response = client.search(request -> request
+                        .index(ElasticSearchIndexTest.INDEX_NAME)
+                        .scroll(Time.of(t -> t.time("1m")))
+                        .query(q ->
+                                q.matchAll(m -> m) // match_all 查询
+                        )
+                        .size(5),
+                SmsLogsPO.class);
+        System.out.println(response.hits().total().value()); // 数量
+        System.out.println(response.scrollId()); // scrollId
+        response.hits().hits().forEach(h -> {
+            SmsLogsPO log = h.source(); // 实体类
+            System.out.println(log);
+        });
+        num = response.hits().hits().size();
+
+        // 根据 scro1l 查询下一页数据
+        String scrollId = response.scrollId();
+        while (num > 0) {
+            ScrollResponse<SmsLogsPO> scrollResponse = client.scroll(s -> s
+                            .scrollId(scrollId)
+                            .scroll(Time.of(t -> t.time("1m"))),
+                SmsLogsPO.class
+            );
+            System.out.println(scrollResponse.hits().total().value()); // 数量
+            System.out.println(scrollResponse.scrollId()); // scrollId
+            scrollResponse.hits().hits().forEach(h -> {
+                SmsLogsPO log = h.source(); // 实体类
+                System.out.println(log);
+            });
+            num = scrollResponse.hits().hits().size();
+        }
+
+        // 删除 scro11 在 ES 上下文中的数据
+        ClearScrollResponse clearScrollResponse = client.clearScroll(s -> s.scrollId(scrollId));
+        System.out.println(clearScrollResponse);
     }
 
     @Test
