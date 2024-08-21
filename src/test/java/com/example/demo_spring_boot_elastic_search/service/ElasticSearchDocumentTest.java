@@ -4,9 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.Time;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.json.JsonData;
@@ -126,7 +124,7 @@ public class ElasticSearchDocumentTest {
         SearchResponse<SmsLogsPO> response = client.search(request -> request
                         .index(ElasticSearchIndexTest.INDEX_NAME)
                         .query(q ->
-                                        q.term(t -> t.field("province").value("北京"))    // term 查询
+//                                        q.term(t -> t.field("province").value("北京"))    // term 查询
 //                                        q.terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
 //                                        q.matchAll(m -> m) // match_all 查询
 //                                        q.match(m -> m.field("smsContent").query("尊敬尊贵")) // match 查询
@@ -138,7 +136,19 @@ public class ElasticSearchDocumentTest {
 //                                        q.wildcard(f -> f.field("corpName").value("途虎*")) // wildcard 查询
 //                                        q.range(r -> r.field("fee").gte(JsonData.of(5)).lte(JsonData.of(10))) // range 查询
 //                                        q.regexp((r -> r.field("mobile").value("180[0-9]{8}"))) // regexp 查询
-//                                        q.bool(b -> b.must(nameQuery, priceQuery)) // 嵌套查询
+//                                        q.bool(b -> b // bool 查询
+//                                                .should(TermQuery.of(t -> t.field("province").value("北京"))._toQuery(), TermQuery.of(t -> t.field("province").value("武汉"))._toQuery())
+//                                                .mustNot(TermQuery.of(t -> t.field("operatorId").value("2"))._toQuery())
+//                                                .must(MatchQuery.of(m -> m.field("smsContent").query("中国"))._toQuery(), MatchQuery.of(m -> m.field("smsContent").query("平安"))._toQuery())) // bool 查询
+//                                        q.boosting(b -> b //boosting 查询
+//                                                .positive(MatchQuery.of(m -> m.field("smsContent").query("收获安装"))._toQuery())
+//                                                .negative(MatchQuery.of(m -> m.field("smsContent").query("王五"))._toQuery())
+//                                                .negativeBoost(0.5))
+                                        q.bool(b -> b
+                                                .filter(
+                                                        TermQuery.of(t -> t.field("province").value("武汉"))._toQuery(),
+                                                        RangeQuery.of(r -> r.field("fee").lte(JsonData.of(5)))._toQuery()
+                                                ))
                         )
 //                        .sort(s -> s.field(f -> f.field("price").order(SortOrder.Asc))) //排序字段1
 //                        .sort(s -> s.field(f -> f.field("create_date").order(SortOrder.Desc))) //排序字段2
@@ -215,4 +225,17 @@ public class ElasticSearchDocumentTest {
 //                .id("1"));
 //        System.out.println(response);
     }
+
+    @Test
+    @Order(6)
+    public void deleteByQueryDocument() throws IOException {
+        DeleteByQueryResponse response = client.deleteByQuery(request -> request
+                        .index(ElasticSearchIndexTest.INDEX_NAME)
+                        .query(q ->
+                                        q.range(r -> r.field("fee").lt(JsonData.of(4))) // range 查询
+                        ));
+        System.out.println(response);
+    }
+
+
 }
