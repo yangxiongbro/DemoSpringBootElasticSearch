@@ -1,0 +1,35 @@
+[
+  {
+    "_index": "map_index",
+    "_id": "1",
+    "_source": {
+      "name": "天安门",
+      "location": {
+        "lon": 116.403981,
+        "lat": 39.914492
+      }
+    }
+  },
+  {
+    "_index": "map_index",
+    "_id": "2",
+    "_source": {
+      "name": "海淀公园",
+      "location": {
+        "lon": 116.302509,
+        "lat": 39.991152
+      }
+    }
+  },
+  {
+    "_index": "map_index",
+    "_id": "3",
+    "_source": {
+      "name": "北京动物园",
+      "location": {
+        "lon": 116.34304,
+        "lat": 39.947468
+      }
+    }
+  }
+]

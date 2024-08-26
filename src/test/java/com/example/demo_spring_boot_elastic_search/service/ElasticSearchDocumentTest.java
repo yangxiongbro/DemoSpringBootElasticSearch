@@ -112,76 +112,80 @@ public class ElasticSearchDocumentTest {
 
     @Test
     @Order(4)
-public void searchDocument() throws IOException {
-//        Query nameQuery = MatchQuery.of(m -> m.field("name").query("小米15"))._toQuery();
-//        Query priceQuery = MatchQuery.of(m -> m.field("price").query(3999.99))._toQuery();
-//        List<FieldValue> provinceList = new ArrayList<>(2);
-//        provinceList.add(FieldValue.of("北京"));
-//        provinceList.add(FieldValue.of("武汉"));
-    // 搜索
-    SearchResponse<SmsLogsPO> response = client.search(request -> request
-                    .index(ElasticSearchIndexTest.INDEX_NAME)
-                    .query(q -> q
-//                                        .term(t -> t.field("province").value("北京"))    // term 查询
-//                                        .terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
-                                    .matchAll(m -> m) // match_all 查询
-//                                        .match(m -> m.field("smsContent").query("尊敬尊贵")) // match 查询
-//                                        .match(m -> m.field("smsContent").query("尊贵 先生").operator(Operator.And)) // 布尔 match 查询
-//                                        .multiMatch(m -> m.query("北京").fields("province","smsContent")) // multi_match 查询
-//                                        .ids(i ->i.values("1u9_VpEBCrSApDIskHH3", "2O9_VpEBCrSApDIskHH3"))
-//                                        .prefix(p -> p.field("corpName").value("途虎养车")) // prefix 查询
-//                                        .fuzzy(f -> f.field("corpName").value("途虎养车").prefixLength(2)) // fuzzy 查询
-//                                        .wildcard(f -> f.field("corpName").value("途虎*")) // wildcard 查询
-//                                        .range(r -> r.field("fee").gte(JsonData.of(5)).lte(JsonData.of(10))) // range 查询
-//                                        .regexp((r -> r.field("mobile").value("180[0-9]{8}"))) // regexp 查询
-//                                        .bool(b -> b // bool 查询
-//                                                .should(TermQuery.of(t -> t.field("province").value("北京"))._toQuery(), TermQuery.of(t -> t.field("province").value("武汉"))._toQuery())
-//                                                .mustNot(TermQuery.of(t -> t.field("operatorId").value("2"))._toQuery())
-//                                                .must(MatchQuery.of(m -> m.field("smsContent").query("中国"))._toQuery(), MatchQuery.of(m -> m.field("smsContent").query("平安"))._toQuery())) // bool 查询
-//                                        .boosting(b -> b //boosting 查询
-//                                                .positive(MatchQuery.of(m -> m.field("smsContent").query("收获安装"))._toQuery())
-//                                                .negative(MatchQuery.of(m -> m.field("smsContent").query("王五"))._toQuery())
-//                                                .negativeBoost(0.5))
-//                                        .bool(b -> b // filter 查询
-//                                                .filter(
-//                                                        TermQuery.of(t -> t.field("province").value("武汉"))._toQuery(),
-//                                                        RangeQuery.of(r -> r.field("fee").lte(JsonData.of(5)))._toQuery()
-//                                                ))
-                    )
-//                        .highlight(h -> h // 高亮查询
-//                                .fields("smsContent", v -> v
-//                                        .fragmentSize(10)
-//                                        .preTags("<font color='red'>")
-//                                        .postTags("</font>")))
-//                        .aggregations("agg_result", a -> a    // 聚合查询（去重计数）
-//                                .cardinality(c -> c
-//                                        .field("province")))
-                    .aggregations("range_result", r -> r
-                            .range(rg -> rg
-                                    .field("fee")
-                                    .ranges(
-                                            AggregationRange.of(ar -> ar.to("5")),
-                                            AggregationRange.of(ar -> ar.from("5").to("10")),
-                                            AggregationRange.of(ar -> ar.from("10")))))
+    public void searchDocument() throws IOException {
+    //        Query nameQuery = MatchQuery.of(m -> m.field("name").query("小米15"))._toQuery();
+    //        Query priceQuery = MatchQuery.of(m -> m.field("price").query(3999.99))._toQuery();
+    //        List<FieldValue> provinceList = new ArrayList<>(2);
+    //        provinceList.add(FieldValue.of("北京"));
+    //        provinceList.add(FieldValue.of("武汉"));
+        // 搜索
+        SearchResponse<SmsLogsPO> response = client.search(request -> request
+                        .index(ElasticSearchIndexTest.INDEX_NAME)
+                        .query(q -> q
+    //                                        .term(t -> t.field("province").value("北京"))    // term 查询
+    //                                        .terms(t -> t.field("province").terms(ts -> ts.value(provinceList)))  // terms 查询
+                                        .matchAll(m -> m) // match_all 查询
+    //                                        .match(m -> m.field("smsContent").query("尊敬尊贵")) // match 查询
+    //                                        .match(m -> m.field("smsContent").query("尊贵 先生").operator(Operator.And)) // 布尔 match 查询
+    //                                        .multiMatch(m -> m.query("北京").fields("province","smsContent")) // multi_match 查询
+    //                                        .ids(i ->i.values("1u9_VpEBCrSApDIskHH3", "2O9_VpEBCrSApDIskHH3"))
+    //                                        .prefix(p -> p.field("corpName").value("途虎养车")) // prefix 查询
+    //                                        .fuzzy(f -> f.field("corpName").value("途虎养车").prefixLength(2)) // fuzzy 查询
+    //                                        .wildcard(f -> f.field("corpName").value("途虎*")) // wildcard 查询
+    //                                        .range(r -> r.field("fee").gte(JsonData.of(5)).lte(JsonData.of(10))) // range 查询
+    //                                        .regexp((r -> r.field("mobile").value("180[0-9]{8}"))) // regexp 查询
+    //                                        .bool(b -> b // bool 查询
+    //                                                .should(TermQuery.of(t -> t.field("province").value("北京"))._toQuery(), TermQuery.of(t -> t.field("province").value("武汉"))._toQuery())
+    //                                                .mustNot(TermQuery.of(t -> t.field("operatorId").value("2"))._toQuery())
+    //                                                .must(MatchQuery.of(m -> m.field("smsContent").query("中国"))._toQuery(), MatchQuery.of(m -> m.field("smsContent").query("平安"))._toQuery())) // bool 查询
+    //                                        .boosting(b -> b //boosting 查询
+    //                                                .positive(MatchQuery.of(m -> m.field("smsContent").query("收获安装"))._toQuery())
+    //                                                .negative(MatchQuery.of(m -> m.field("smsContent").query("王五"))._toQuery())
+    //                                                .negativeBoost(0.5))
+    //                                        .bool(b -> b // filter 查询
+    //                                                .filter(
+    //                                                        TermQuery.of(t -> t.field("province").value("武汉"))._toQuery(),
+    //                                                        RangeQuery.of(r -> r.field("fee").lte(JsonData.of(5)))._toQuery()
+    //                                                ))
+                        )
+    //                        .highlight(h -> h // 高亮查询
+    //                                .fields("smsContent", v -> v
+    //                                        .fragmentSize(10)
+    //                                        .preTags("<font color='red'>")
+    //                                        .postTags("</font>")))
+    //                        .aggregations("agg_result", a -> a    // 聚合查询（去重计数）
+    //                                .cardinality(c -> c
+    //                                        .field("province")))
+    //                        .aggregations("range_result", r -> r    // 聚合查询（范围统计）
+    //                                .range(rg -> rg
+    //                                        .field("fee")
+    //                                        .ranges(
+    //                                                AggregationRange.of(ar -> ar.to("5")),
+    //                                                AggregationRange.of(ar -> ar.from("5").to("10")),
+    //                                                AggregationRange.of(ar -> ar.from("10")))))
+                            .aggregations("stats_result", s -> s   // 聚合查询（统计聚合查询）
+                                    .extendedStats(es -> es.field("fee")))
 
-//                        .sort(s -> s.field(f -> f.field("price").order(SortOrder.Asc))) //排序字段1
-//                        .sort(s -> s.field(f -> f.field("create_date").order(SortOrder.Desc))) //排序字段2
-                    .from(0)   // 浅分页，类似 mysql 的 limit 参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html
-                    .size(20), // 默认查询 10 条,如果需要查询更多则需要指定 size
-            SmsLogsPO.class);
-    System.out.println(response.hits().total().value()); //数量
-    response.hits().hits().forEach(h -> {
-        SmsLogsPO log = h.source(); // 实体类
-        System.out.println(log);
-        System.out.println(h.highlight());
-    });
-//    Aggregate aggregate = response.aggregations().get("agg_result");
-//    System.out.println(aggregate.cardinality().value());
-    Aggregate aggregate = response.aggregations().get("range_result");
-    for(RangeBucket bucket:aggregate.range().buckets().array()){
-        System.out.println(bucket);
+    //                        .sort(s -> s.field(f -> f.field("price").order(SortOrder.Asc))) //排序字段1
+    //                        .sort(s -> s.field(f -> f.field("create_date").order(SortOrder.Desc))) //排序字段2
+                        .from(0)   // 浅分页，类似 mysql 的 limit 参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html
+                        .size(20), // 默认查询 10 条,如果需要查询更多则需要指定 size
+                SmsLogsPO.class);
+        System.out.println(response.hits().total().value()); //数量
+        response.hits().hits().forEach(h -> {
+            SmsLogsPO log = h.source(); // 实体类
+            System.out.println(log);
+            System.out.println(h.highlight()); // 高亮查询
+        });
+    //    Aggregate aggregate = response.aggregations().get("agg_result");    // 聚合查询（去重计数）
+    //    System.out.println(aggregate.cardinality().value());
+    //    Aggregate aggregate = response.aggregations().get("range_result");    // 聚合查询（范围统计）
+    //    for(RangeBucket bucket:aggregate.range().buckets().array()){
+    //        System.out.println(bucket);
+    //    }
+        Aggregate aggregate = response.aggregations().get("stats_result");   // 聚合查询（统计聚合查询）
+        System.out.println(aggregate.extendedStats());
     }
-}
 
     @Test
     @Order(4)

@@ -35,11 +35,13 @@ public class ElasticSearchIndexTest {
 
     public static final String INDEX_NAME = "sms-logs-index";
 
+    public static final String MAP_INDEX_NAME = "map-index";
+
     @Test
     @Order(1)
     public void createIndex() throws IOException {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("json/CreateIndex.json"), StandardCharsets.UTF_8))) {
-            CreateIndexResponse response = client.indices().create(r -> r.index(INDEX_NAME).withJson(br));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("json/MapIndex.json"), StandardCharsets.UTF_8))) {
+            CreateIndexResponse response = client.indices().create(r -> r.index(MAP_INDEX_NAME).withJson(br));
             System.out.println(response);
         }
     }
